@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>A Little Universe, Just For You</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ============ PASSWORD GATE ============ -->
+  <section id="gate" class="gate">
+    <canvas id="gate-stars" class="gate-stars"></canvas>
+    <div class="gate-horizon"></div>
+    <div class="gate-content">
+      <p class="gate-kicker">A GIFT WRAPPED IN STARLIGHT</p>
+      <h1 class="gate-title">A LITTLE UNIVERSE,<br />JUST FOR YOU</h1>
+      <p class="gate-subtitle">Some wishes are worth discovering.</p>
+
+      <form id="gate-form" class="gate-form" autocomplete="off">
+        <div class="gate-input-wrap">
+          <input
+            id="gate-password"
+            type="password"
+            inputmode="text"
+            class="gate-input"
+            placeholder="Enter the secret password"
+            aria-label="Secret password"
+          />
+          <button type="button" id="gate-toggle-eye" class="gate-eye" aria-label="Show password">
+            <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9z"/><circle cx="12" cy="12" r="2.3" fill="currentColor"/></svg>
+          </button>
+        </div>
+        <button type="submit" class="gate-unlock">UNLOCK THE UNIVERSE</button>
+        <p id="gate-error" class="gate-error" role="alert"></p>
+        <p class="gate-note">Prototype note: this is a client-side password for a personal gift, not real security — anyone who reads the page source can see it.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ============ MAIN EXPERIENCE ============ -->
+  <main id="experience" class="experience" hidden>
+
+    <canvas id="scene" class="scene-canvas"></canvas>
+
+    <div id="loading-overlay" class="loading-overlay">
+      <div class="loading-ring"></div>
+      <p class="loading-text">Assembling a universe of wishes…</p>
+    </div>
+
+    <div id="webgl-fallback" class="webgl-fallback" hidden>
+      <h2>Happy Birthday!</h2>
+      <p>Your browser can't show the 3D galaxy, but the wish is just as real.</p>
+      <div id="fallback-list" class="fallback-list"></div>
+    </div>
+
+    <button id="skip-intro" class="skip-intro">Skip intro ›</button>
+
+    <!-- top-left brand mark -->
+    <div class="hud-brand">
+      <span class="hud-brand-dot"></span>
+      A LITTLE UNIVERSE
+    </div>
+
+    <!-- control dock -->
+    <nav class="control-dock" aria-label="Scene controls">
+      <button id="btn-sound" class="dock-btn" title="Toggle music" aria-pressed="false">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M4 10v4h4l5 5V5L8 10H4z"/></svg>
+      </button>
+      <button id="btn-rotate" class="dock-btn" title="Pause/resume rotation" aria-pressed="true">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 4a8 8 0 1 0 7.9 9h-2.05A6 6 0 1 1 12 6V2.5L16 6l-4 3.5V4z"/></svg>
+      </button>
+      <button id="btn-recenter" class="dock-btn" title="Return to center">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 2v3m0 14v3M2 12h3m14 0h3" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+      </button>
+      <button id="btn-fullscreen" class="dock-btn" title="Fullscreen">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+      </button>
+    </nav>
+
+    <!-- music player -->
+    <div class="music-player" id="music-player">
+      <canvas id="music-visualizer" width="60" height="24"></canvas>
+      <input id="music-volume" type="range" min="0" max="1" step="0.01" value="0.4" aria-label="Volume" />
+      <audio id="bg-audio" src="audio/ambient.mp3" loop preload="none"></audio>
+    </div>
+
+    <!-- discovery panel -->
+    <aside id="info-panel" class="info-panel" hidden>
+      <button id="info-close" class="info-close" aria-label="Close">×</button>
+      <p class="info-lang" id="info-lang"></p>
+      <p class="info-native" id="info-native"></p>
+      <p class="info-greeting" id="info-greeting" dir="auto"></p>
+      <p class="info-meaning" id="info-meaning"></p>
+    </aside>
+
+    <p class="hud-hint" id="hud-hint">Drag to rotate · scroll to zoom · hover to reveal a wish</p>
+
+    <!-- personalized message, revealed after the main scene -->
+    <section id="personal-message" class="personal-message" hidden>
+      <div class="personal-inner">
+        <p class="personal-line">Out of all the stars in the universe,</p>
+        <p class="personal-line">today is the day one of them shines a little brighter.</p>
+        <p class="personal-line personal-spacer">May your life be filled with beautiful memories,</p>
+        <p class="personal-line">unexpected happiness, endless opportunities,</p>
+        <p class="personal-line">and dreams that become reality.</p>
+        <p class="personal-line personal-spacer">No matter which language the universe speaks,</p>
+        <p class="personal-line">one wish remains the same:</p>
+        <h2 class="personal-signoff" id="personal-name-line">Happy Birthday!</h2>
+        <button id="personal-close" class="personal-close">Back to the universe</button>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="translations.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+    }
+  }
+  </script>
+  <script type="module" src="script.js"></script>
+</body>
+</html>
