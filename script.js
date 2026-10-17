@@ -1,4 +1,4 @@
-import * as THREE from "three";
+/* global THREE */
 
 /* =========================================================
    CONFIGURATION — edit these for your gift
