@@ -277,51 +277,54 @@ function buildVoidSphere() {
 
 function buildPhotoMedallion() {
   const img = new Image();
-  img.crossOrigin = "anonymous";
   img.onload = () => {
-    const size = 640;
-    const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext("2d");
-    const r = size / 2;
+    try {
+      const size = 512;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      const r = size / 2;
 
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(r, r, r, 0, Math.PI * 2);
-    ctx.clip();
-    const scale = Math.max(size / img.width, size / img.height);
-    const dw = img.width * scale;
-    const dh = img.height * scale;
-    ctx.drawImage(img, r - dw / 2, r - dh / 2, dw, dh);
-    ctx.restore();
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(r, r, r, 0, Math.PI * 2);
+      ctx.clip();
+      const scale = Math.max(size / img.naturalWidth, size / img.naturalHeight);
+      const dw = img.naturalWidth * scale;
+      const dh = img.naturalHeight * scale;
+      ctx.drawImage(img, r - dw / 2, r - dh / 2, dw, dh);
+      ctx.restore();
 
-    ctx.globalCompositeOperation = "destination-in";
-    const fade = ctx.createRadialGradient(r, r, r * 0.74, r, r, r);
-    fade.addColorStop(0, "rgba(0,0,0,1)");
-    fade.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = fade;
-    ctx.beginPath();
-    ctx.arc(r, r, r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalCompositeOperation = "source-over";
+      ctx.globalCompositeOperation = "destination-in";
+      const fade = ctx.createRadialGradient(r, r, r * 0.74, r, r, r);
+      fade.addColorStop(0, "rgba(0,0,0,1)");
+      fade.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = fade;
+      ctx.beginPath();
+      ctx.arc(r, r, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalCompositeOperation = "source-over";
 
-    ctx.beginPath();
-    ctx.arc(r, r, r * 0.84, 0, Math.PI * 2);
-    ctx.lineWidth = size * 0.012;
-    ctx.strokeStyle = "rgba(212,175,55,0.55)";
-    ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(r, r, r * 0.84, 0, Math.PI * 2);
+      ctx.lineWidth = size * 0.012;
+      ctx.strokeStyle = "rgba(212,175,55,0.55)";
+      ctx.stroke();
 
-    const tex = new THREE.CanvasTexture(canvas);
-    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
-    const medallion = new THREE.Sprite(mat);
-    medallion.scale.set(4.0, 4.0, 1);
-    scene.add(medallion);
+      const tex = new THREE.CanvasTexture(canvas);
+      const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+      const medallion = new THREE.Sprite(mat);
+      medallion.scale.set(4.0, 4.0, 1);
+      scene.add(medallion);
+    } catch (err) {
+      buildVoidSphere();
+    }
   };
   img.onerror = () => {
     buildVoidSphere();
   };
-  img.src = CONFIG.CENTER_PHOTO;
+  img.src = CONFIG.CENTER_PHOTO + "?v=2";
 }
 
 /* ---------- text sprites ---------- */
