@@ -8,7 +8,7 @@ const CONFIG = {
   FRIEND_NAME: "XADICHA", // e.g. "Malika" — left blank until you provide it
   BIRTHDAY_AGE: "", // e.g. "24" — leave blank to hide the age entirely
   PERSONAL_MESSAGE_SIGNOFF: "Happy Birthday!",
-  CENTER_PHOTO: "", // path to a portrait to show inside the void, or "" for the plain black hole
+  CENTER_PHOTO: "photo.jpg", // path to a portrait to show inside the void, or "" for the plain black hole
 };
 
 const PREFERS_REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
