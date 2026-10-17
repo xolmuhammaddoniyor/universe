@@ -307,10 +307,10 @@ function getTexture(str, rtl, fontSize) {
 function buildWordRings() {
   const replication = LOW_POWER ? 3 : 5;
   const ringDefs = [
-    { radiusMin: 2.6, radiusMax: 3.4, tilt: 0.08, speed: 1.0, fontSize: 40, baseScale: 0.2, count: replication * 0.3 },
-    { radiusMin: 4.0, radiusMax: 5.2, tilt: 0.42, speed: 0.6, fontSize: 56, baseScale: 0.28, count: replication * 0.45 },
-    { radiusMin: 5.6, radiusMax: 7.0, tilt: -0.3, speed: 0.4, fontSize: 60, baseScale: 0.34, count: replication * 0.45 },
-    { radiusMin: 7.4, radiusMax: 9.2, tilt: 0.65, speed: 0.25, fontSize: 52, baseScale: 0.3, count: replication * 0.5 },
+    { radiusMin: 2.6, radiusMax: 3.2, tilt: 0.08, speed: 1.0, direction: 1, fontSize: 40, baseScale: 0.2, count: replication * 0.3 },
+    { radiusMin: 4.0, radiusMax: 4.8, tilt: 0.42, speed: 0.6, direction: -1, fontSize: 56, baseScale: 0.28, count: replication * 0.45 },
+    { radiusMin: 5.6, radiusMax: 6.5, tilt: -0.3, speed: 0.4, direction: 1, fontSize: 60, baseScale: 0.34, count: replication * 0.45 },
+    { radiusMin: 7.4, radiusMax: 8.5, tilt: 0.65, speed: 0.25, direction: -1, fontSize: 52, baseScale: 0.3, count: replication * 0.5 },
   ];
   const haloCount = LOW_POWER ? 110 : 220;
 
@@ -335,9 +335,9 @@ function buildWordRings() {
         langIndex: i % GREETINGS.length,
         radius,
         angle,
-        tilt: ring.tilt + (Math.random() - 0.5) * 0.12,
-        speed: ring.speed * (0.8 + Math.random() * 0.4) * (Math.random() < 0.5 ? 1 : -1) * 0.15,
-        verticalOffset: (Math.random() - 0.5) * 0.4,
+        tilt: ring.tilt + (Math.random() - 0.5) * 0.02,
+        speed: ring.speed * 0.15 * (ring.direction || 1),
+        verticalOffset: (Math.random() - 0.5) * 0.05,
         baseOpacity: 0.55 + Math.random() * 0.4,
         baseScale: scale * aspect,
         baseScaleY: scale,
@@ -390,13 +390,14 @@ function replicationCountFor(ring, replication) {
   return Math.round(GREETINGS.length * (ring.count / replication));
 }
 
+const RING_TILT_AXIS = new THREE.Vector3(1, 0, 0);
 function positionWordSprite(sprite) {
   const u = sprite.userData;
   const x = Math.cos(u.angle) * u.radius;
   const z = Math.sin(u.angle) * u.radius;
-  const y = u.verticalOffset + Math.sin(u.angle * 2) * 0.15;
+  const y = u.verticalOffset;
   sprite.position.set(x, y, z);
-  sprite.position.applyAxisAngle(new THREE.Vector3(1, 0, 0), u.tilt);
+  sprite.position.applyAxisAngle(RING_TILT_AXIS, u.tilt);
 }
 
 function positionHaloSprite(sprite) {
