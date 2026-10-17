@@ -8,6 +8,7 @@ const CONFIG = {
   FRIEND_NAME: "XADICHA", // e.g. "Malika" — left blank until you provide it
   BIRTHDAY_AGE: "", // e.g. "24" — leave blank to hide the age entirely
   PERSONAL_MESSAGE_SIGNOFF: "Happy Birthday!",
+  CENTER_PHOTO: "", // path to a portrait to show inside the void, or "" for the plain black hole
 };
 
 const PREFERS_REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -243,10 +244,11 @@ function buildStarfield() {
 }
 
 function buildCore() {
-  const voidGeo = new THREE.SphereGeometry(2.1, 48, 48);
-  const voidMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-  const voidSphere = new THREE.Mesh(voidGeo, voidMat);
-  scene.add(voidSphere);
+  if (CONFIG.CENTER_PHOTO) {
+    buildPhotoMedallion();
+  } else {
+    buildVoidSphere();
+  }
 
   // soft golden glow rim around the void, via an additive backside sprite
   const glowCanvas = document.createElement("canvas");
@@ -264,6 +266,62 @@ function buildCore() {
   const glow = new THREE.Sprite(glowMat);
   glow.scale.set(7.5, 7.5, 1);
   scene.add(glow);
+}
+
+function buildVoidSphere() {
+  const voidGeo = new THREE.SphereGeometry(2.1, 48, 48);
+  const voidMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+  const voidSphere = new THREE.Mesh(voidGeo, voidMat);
+  scene.add(voidSphere);
+}
+
+function buildPhotoMedallion() {
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.onload = () => {
+    const size = 640;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    const r = size / 2;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(r, r, r, 0, Math.PI * 2);
+    ctx.clip();
+    const scale = Math.max(size / img.width, size / img.height);
+    const dw = img.width * scale;
+    const dh = img.height * scale;
+    ctx.drawImage(img, r - dw / 2, r - dh / 2, dw, dh);
+    ctx.restore();
+
+    ctx.globalCompositeOperation = "destination-in";
+    const fade = ctx.createRadialGradient(r, r, r * 0.74, r, r, r);
+    fade.addColorStop(0, "rgba(0,0,0,1)");
+    fade.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = fade;
+    ctx.beginPath();
+    ctx.arc(r, r, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+
+    ctx.beginPath();
+    ctx.arc(r, r, r * 0.84, 0, Math.PI * 2);
+    ctx.lineWidth = size * 0.012;
+    ctx.strokeStyle = "rgba(212,175,55,0.55)";
+    ctx.stroke();
+
+    const tex = new THREE.CanvasTexture(canvas);
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+    const medallion = new THREE.Sprite(mat);
+    medallion.scale.set(4.0, 4.0, 1);
+    scene.add(medallion);
+  };
+  img.onerror = () => {
+    buildVoidSphere();
+  };
+  img.src = CONFIG.CENTER_PHOTO;
 }
 
 /* ---------- text sprites ---------- */
