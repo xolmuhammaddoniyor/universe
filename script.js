@@ -492,6 +492,13 @@ function bindUI() {
   const btnSound = document.getElementById("btn-sound");
   let audioCtx, analyser, source, vizData;
   let audioReady = false;
+  let seeked = false;
+  audio.addEventListener("loadedmetadata", () => {
+    if (!seeked) {
+      audio.currentTime = 3;
+      seeked = true;
+    }
+  });
 
   function setupAudioGraph() {
     if (audioReady) return;
@@ -516,6 +523,10 @@ function bindUI() {
       btnSound.setAttribute("aria-pressed", "false");
     } else {
       setupAudioGraph();
+      if (!seeked && audio.readyState >= 1) {
+        audio.currentTime = 3;
+        seeked = true;
+      }
       audio.play().catch(() => {});
       btnSound.setAttribute("aria-pressed", "true");
     }
