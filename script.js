@@ -324,7 +324,7 @@ function buildPhotoMedallion() {
   img.onerror = () => {
     buildVoidSphere();
   };
-  img.src = CONFIG.CENTER_PHOTO + "?v=2";
+  img.src = CONFIG.CENTER_PHOTO + "?v=3";
 }
 
 /* ---------- text sprites ---------- */
