@@ -38,6 +38,10 @@ gateForm.addEventListener("submit", (e) => {
     document.body.style.overflow = "hidden";
     startMusic();
     setTimeout(initExperience, 300);
+    setTimeout(() => {
+      const overlay = document.getElementById("loading-overlay");
+      if (overlay && !overlay.classList.contains("hide")) showFallback();
+    }, 15000);
     gateForm.removeEventListener("submit", () => {});
   } else {
     gateError.textContent = "That's not quite it — try again.";
@@ -155,41 +159,45 @@ function initExperience() {
     return;
   }
 
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, LOW_POWER ? 1.5 : 2));
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setClearColor(0x020204, 1);
+  try {
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, LOW_POWER ? 1.5 : 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x020204, 1);
 
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 500);
-  camera.position.set(0, 0, cameraZ);
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 500);
+    camera.position.set(0, 0, cameraZ);
 
-  raycaster = new THREE.Raycaster();
-  raycaster.params.Sprite = { threshold: 0.3 };
-  pointer = new THREE.Vector2(10, 10);
+    raycaster = new THREE.Raycaster();
+    raycaster.params.Sprite = { threshold: 0.3 };
+    pointer = new THREE.Vector2(10, 10);
 
-  buildStarfield();
-  buildCore();
-  planetGroup = new THREE.Group();
-  scene.add(planetGroup);
-  buildWordRings();
-  buildDust();
+    buildStarfield();
+    buildCore();
+    planetGroup = new THREE.Group();
+    scene.add(planetGroup);
+    buildWordRings();
+    buildDust();
 
-  canvas.addEventListener("webglcontextlost", (e) => {
-    e.preventDefault();
-    cancelAnimationFrame(rafId);
-  });
-  canvas.addEventListener("webglcontextrestored", () => {
+    canvas.addEventListener("webglcontextlost", (e) => {
+      e.preventDefault();
+      cancelAnimationFrame(rafId);
+    });
+    canvas.addEventListener("webglcontextrestored", () => {
+      animate();
+    });
+
+    bindInteraction();
+    bindUI();
+
+    window.addEventListener("resize", onResize);
+
+    introStart = performance.now();
+    document.getElementById("loading-overlay").classList.add("hide");
     animate();
-  });
-
-  bindInteraction();
-  bindUI();
-
-  window.addEventListener("resize", onResize);
-
-  introStart = performance.now();
-  document.getElementById("loading-overlay").classList.add("hide");
-  animate();
+  } catch (err) {
+    showFallback();
+  }
 }
 
 function showFallback() {
