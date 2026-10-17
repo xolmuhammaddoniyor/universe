@@ -176,6 +176,13 @@ button {
 }
 .gate-error.show { opacity: 1; }
 
+.gate-input.shake { animation: shake 0.4s ease; }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
 .gate-note {
   max-width: 340px;
   font-size: 10.5px;

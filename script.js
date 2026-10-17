@@ -42,11 +42,13 @@ gateForm.addEventListener("submit", (e) => {
       const overlay = document.getElementById("loading-overlay");
       if (overlay && !overlay.classList.contains("hide")) showFallback();
     }, 15000);
-    gateForm.removeEventListener("submit", () => {});
   } else {
     gateError.textContent = "That's not quite it — try again.";
     gateError.classList.add("show");
+    gateInput.classList.remove("shake");
+    void gateInput.offsetWidth;
     gateInput.classList.add("shake");
+    setTimeout(() => gateInput.classList.remove("shake"), 450);
     setTimeout(() => gateError.classList.remove("show"), 2200);
   }
 });
