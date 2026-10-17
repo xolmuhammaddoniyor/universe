@@ -36,6 +36,7 @@ gateForm.addEventListener("submit", (e) => {
     gate.classList.add("gate-hidden");
     experience.hidden = false;
     document.body.style.overflow = "hidden";
+    startMusic();
     setTimeout(initExperience, 300);
     gateForm.removeEventListener("submit", () => {});
   } else {
@@ -45,6 +46,45 @@ gateForm.addEventListener("submit", (e) => {
     setTimeout(() => gateError.classList.remove("show"), 2200);
   }
 });
+
+/* =========================================================
+   BACKGROUND MUSIC — starts the moment the universe unlocks,
+   no mute control; only the volume slider adjusts it.
+   ========================================================= */
+const bgAudio = document.getElementById("bg-audio");
+let audioCtx, analyser, vizData;
+let audioGraphReady = false;
+let audioSeeked = false;
+
+bgAudio.volume = 0.4;
+bgAudio.addEventListener("loadedmetadata", () => {
+  if (!audioSeeked) {
+    bgAudio.currentTime = 3;
+    audioSeeked = true;
+  }
+});
+
+function startMusic() {
+  if (!audioGraphReady) {
+    audioGraphReady = true;
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioCtx.createMediaElementSource(bgAudio);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 64;
+      vizData = new Uint8Array(analyser.frequencyBinCount);
+      source.connect(analyser);
+      analyser.connect(audioCtx.destination);
+    } catch (err) {
+      /* visualizer optional, playback still works without it */
+    }
+  }
+  if (!audioSeeked && bgAudio.readyState >= 1) {
+    bgAudio.currentTime = 3;
+    audioSeeked = true;
+  }
+  bgAudio.play().catch(() => {});
+}
 
 drawGateStars();
 function drawGateStars() {
@@ -488,60 +528,15 @@ function bindUI() {
     else document.exitFullscreen?.();
   });
 
-  const audio = document.getElementById("bg-audio");
-  const btnSound = document.getElementById("btn-sound");
-  let audioCtx, analyser, source, vizData;
-  let audioReady = false;
-  let seeked = false;
-  audio.addEventListener("loadedmetadata", () => {
-    if (!seeked) {
-      audio.currentTime = 3;
-      seeked = true;
-    }
-  });
-
-  function setupAudioGraph() {
-    if (audioReady) return;
-    audioReady = true;
-    try {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      source = audioCtx.createMediaElementSource(audio);
-      analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 64;
-      vizData = new Uint8Array(analyser.frequencyBinCount);
-      source.connect(analyser);
-      analyser.connect(audioCtx.destination);
-    } catch (err) {
-      /* visualizer optional */
-    }
-  }
-
-  btnSound.addEventListener("click", () => {
-    const playing = !audio.paused;
-    if (playing) {
-      audio.pause();
-      btnSound.setAttribute("aria-pressed", "false");
-    } else {
-      setupAudioGraph();
-      if (!seeked && audio.readyState >= 1) {
-        audio.currentTime = 3;
-        seeked = true;
-      }
-      audio.play().catch(() => {});
-      btnSound.setAttribute("aria-pressed", "true");
-    }
-  });
-
   document.getElementById("music-volume").addEventListener("input", (e) => {
-    audio.volume = parseFloat(e.target.value);
+    bgAudio.volume = parseFloat(e.target.value);
   });
-  audio.volume = 0.4;
 
   const vizCanvas = document.getElementById("music-visualizer");
   const vctx = vizCanvas.getContext("2d");
   function drawViz() {
     vctx.clearRect(0, 0, vizCanvas.width, vizCanvas.height);
-    if (analyser && !audio.paused) {
+    if (analyser && !bgAudio.paused) {
       analyser.getByteFrequencyData(vizData);
       const barW = vizCanvas.width / vizData.length;
       for (let i = 0; i < vizData.length; i++) {
