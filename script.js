@@ -146,6 +146,13 @@ let cameraZ = PREFERS_REDUCED_MOTION ? 11 : 55;
 let sceneOpacity = PREFERS_REDUCED_MOTION ? 1 : 0;
 let initialized = false;
 
+// gravitational-lensing post-process (bends what's near the void)
+let lensRT, lensScene, lensCamera, lensMaterial, lensQuad;
+let lensEnabled = false;
+const lensWorldOrigin = new THREE.Vector3(0, 0, 0);
+const lensWorldEdge = new THREE.Vector3(0, 0, 0);
+const VOID_WORLD_RADIUS = 2.1;
+
 function initExperience() {
   if (initialized) return;
   initialized = true;
@@ -181,6 +188,7 @@ function initExperience() {
     scene.add(planetGroup);
     buildWordRings();
     buildDust();
+    buildGravitationalLens();
 
     canvas.addEventListener("webglcontextlost", (e) => {
       e.preventDefault();
@@ -325,6 +333,103 @@ function buildPhotoMedallion() {
     buildVoidSphere();
   };
   img.src = CONFIG.CENTER_PHOTO + "?v=3";
+}
+
+/* ---------- gravitational lensing post-process ---------- */
+
+function buildGravitationalLens() {
+  try {
+    const pr = renderer.getPixelRatio();
+    lensRT = new THREE.WebGLRenderTarget(window.innerWidth * pr, window.innerHeight * pr, {
+      minFilter: THREE.LinearFilter,
+      magFilter: THREE.LinearFilter,
+      format: THREE.RGBAFormat,
+    });
+
+    lensCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    lensScene = new THREE.Scene();
+
+    lensMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        tDiffuse: { value: lensRT.texture },
+        uCenter: { value: new THREE.Vector2(0.5, 0.5) },
+        uAspect: { value: window.innerWidth / window.innerHeight },
+        uStrength: { value: LOW_POWER ? 0.012 : 0.02 },
+        uSwirl: { value: 0.55 },
+        uVisible: { value: 0 },
+        uVoidRadius: { value: 0.12 },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = vec4(position.xy, 0.0, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform vec2 uCenter;
+        uniform float uAspect;
+        uniform float uStrength;
+        uniform float uSwirl;
+        uniform float uVisible;
+        uniform float uVoidRadius;
+        varying vec2 vUv;
+
+        void main() {
+          vec2 d = vUv - uCenter;
+          d.x *= uAspect;
+          float dist = length(d);
+
+          float rInner = uVoidRadius * 1.05;
+          float rPeak = uVoidRadius * 1.7;
+          float rOuter = uVoidRadius * 4.2;
+
+          float pull = uStrength / (dist * dist + 0.012);
+          float ring = smoothstep(rInner, rPeak, dist) * smoothstep(rOuter, rPeak, dist);
+          pull *= ring;
+
+          float angle = atan(d.y, d.x);
+          float swirl = (uSwirl * pull) * uVisible;
+          angle += swirl;
+
+          float newDist = max(dist - pull * uVisible, 0.0);
+          vec2 warped = vec2(cos(angle), sin(angle)) * newDist;
+          warped.x /= uAspect;
+          vec2 sampleUv = uCenter + warped;
+
+          if (dist < rInner) {
+            sampleUv = vUv;
+          }
+
+          sampleUv = clamp(sampleUv, 0.0, 1.0);
+          vec4 color = texture2D(tDiffuse, sampleUv);
+
+          float darken = smoothstep(rInner, rInner * 1.5, dist) * smoothstep(rPeak * 1.3, rInner * 1.5, dist) * uVisible * 0.35;
+          color.rgb *= (1.0 - darken);
+
+          gl_FragColor = color;
+        }
+      `,
+      depthTest: false,
+      depthWrite: false,
+    });
+
+    const geo = new THREE.PlaneGeometry(2, 2);
+    lensQuad = new THREE.Mesh(geo, lensMaterial);
+    lensScene.add(lensQuad);
+
+    lensEnabled = true;
+  } catch (err) {
+    lensEnabled = false;
+  }
+}
+
+function resizeGravitationalLens() {
+  if (!lensEnabled) return;
+  const pr = renderer.getPixelRatio();
+  lensRT.setSize(window.innerWidth * pr, window.innerHeight * pr);
+  lensMaterial.uniforms.uAspect.value = window.innerWidth / window.innerHeight;
 }
 
 /* ---------- text sprites ---------- */
@@ -654,6 +759,7 @@ function onResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  resizeGravitationalLens();
 }
 
 /* ---------- animation loop ---------- */
@@ -685,7 +791,27 @@ function animate() {
 
   if (dustParticles) dustParticles.rotation.y += 0.0004;
 
-  renderer.render(scene, camera);
+  if (lensEnabled) {
+    lensWorldOrigin.set(0, 0, 0).project(camera);
+    const cx = lensWorldOrigin.x * 0.5 + 0.5;
+    const cy = lensWorldOrigin.y * 0.5 + 0.5;
+    lensMaterial.uniforms.uCenter.value.set(cx, cy);
+    lensMaterial.uniforms.uVisible.value = sceneOpacity;
+
+    lensWorldEdge.set(VOID_WORLD_RADIUS, 0, 0).project(camera);
+    const ex = lensWorldEdge.x * 0.5 + 0.5;
+    const ey = lensWorldEdge.y * 0.5 + 0.5;
+    const aspect = window.innerWidth / window.innerHeight;
+    const voidRadiusUv = Math.hypot((ex - cx) * aspect, ey - cy);
+    lensMaterial.uniforms.uVoidRadius.value = voidRadiusUv;
+
+    renderer.setRenderTarget(lensRT);
+    renderer.render(scene, camera);
+    renderer.setRenderTarget(null);
+    renderer.render(lensScene, lensCamera);
+  } else {
+    renderer.render(scene, camera);
+  }
 }
 
 function runIntro(elapsed) {
